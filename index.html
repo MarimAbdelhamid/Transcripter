@@ -80,6 +80,25 @@
             </div>
         </div>
 
+        <!-- Audio Source & Noise Clean -->
+        <div class="source-row">
+            <div class="source-group" role="group" aria-label="Audio source">
+                <button id="srcMicBtn"   class="btn btn-src active" title="Capture from microphone">🎤 Microphone</button>
+                <button id="srcTeamsBtn" class="btn btn-src"        title="Capture Teams / any app audio">💻 Teams / Screen</button>
+            </div>
+            <button id="noiseCleanBtn" class="btn btn-noise-clean active" title="Toggle Web Audio noise filtering">
+                ✨ Noise Clean
+            </button>
+        </div>
+
+        <!-- Teams instruction tip (shown when screen mode is active) -->
+        <div id="teamsTip" class="teams-tip hidden">
+            <strong>How to capture Teams audio:</strong>
+            In the browser dialog, select your <em>Teams window</em> or <em>Entire Screen</em>.
+            On <strong>Windows</strong>: check "Share system audio" to include meeting audio.
+            On <strong>macOS</strong>: system audio capture requires a virtual device (e.g. BlackHole).
+        </div>
+
         <!-- Control Buttons -->
         <div class="controls">
             <button id="startBtn" class="btn btn-start" title="Start recording">

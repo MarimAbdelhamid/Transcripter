@@ -303,6 +303,80 @@ main {
     transition: width 0.25s linear;
 }
 
+/* ---------- Source Selector + Noise Clean ---------- */
+.source-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.source-group {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-src {
+    background: var(--surface);
+    border: none;
+    border-right: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background var(--trans), color var(--trans);
+    user-select: none;
+    white-space: nowrap;
+}
+.btn-src:last-child { border-right: none; }
+.btn-src:hover:not(.active) { background: var(--bg); }
+.btn-src.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-noise-clean {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: background var(--trans), color var(--trans), border-color var(--trans);
+    user-select: none;
+    white-space: nowrap;
+}
+.btn-noise-clean.active {
+    background: var(--surface);
+    color: #10b981;
+    border-color: #10b981;
+}
+.btn-noise-clean:not(.active) { opacity: 0.7; }
+.btn-noise-clean:hover { border-color: var(--accent); }
+
+/* Teams tip */
+.teams-tip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+.teams-tip strong { color: var(--text); }
+.teams-tip em     { font-style: normal; font-weight: 600; color: var(--accent); }
+
 /* ---------- Controls ---------- */
 .controls {
     display: flex;

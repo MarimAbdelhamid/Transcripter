@@ -57,6 +57,11 @@ const chunkLabel        = document.getElementById('chunkLabel');
 const chunkTimerEl      = document.getElementById('chunkTimer');
 const toast             = document.getElementById('toast');
 
+const srcMicBtn         = document.getElementById('srcMicBtn');
+const srcTeamsBtn       = document.getElementById('srcTeamsBtn');
+const noiseCleanBtn     = document.getElementById('noiseCleanBtn');
+const teamsTip          = document.getElementById('teamsTip');
+
 /* ================================================================
    State
    ================================================================ */
@@ -64,6 +69,7 @@ let apiKey          = '';
 let isRecording     = false;
 let mediaRecorder   = null;
 let audioStream     = null;
+let audioCtx        = null;       // Web Audio context for noise processing
 let currentChunks   = [];
 let chunkTimer      = null;
 let progressTimer   = null;       // drives the progress bar UI
@@ -71,6 +77,8 @@ let chunkStart      = 0;          // timestamp when current chunk started
 let segments        = [];         // [{text, time}] – full transcript
 let darkMode        = false;
 let processingCount = 0;          // how many chunks currently being processed
+let audioMode       = 'mic';      // 'mic' | 'screen'
+let noiseCleanOn    = true;       // Web Audio noise-cleaning pipeline
 
 /* ================================================================
    Keyword Definitions
@@ -129,17 +137,132 @@ function showKeyBanner() {
 }
 
 /* ================================================================
+   Audio Source — Microphone or Screen / Teams
+   ================================================================ */
+function setAudioMode(mode) {
+    audioMode = mode;
+    srcMicBtn.classList.toggle('active',   mode === 'mic');
+    srcTeamsBtn.classList.toggle('active', mode === 'screen');
+    teamsTip.classList.toggle('hidden',    mode === 'mic');
+}
+
+function toggleNoiseClean() {
+    noiseCleanOn = !noiseCleanOn;
+    noiseCleanBtn.classList.toggle('active', noiseCleanOn);
+    showToast(noiseCleanOn ? '✨ Noise Clean ON' : '🔇 Noise Clean OFF');
+}
+
+/**
+ * Returns a raw MediaStream based on the current audioMode.
+ * For 'mic': standard getUserMedia with browser noise suppression.
+ * For 'screen': getDisplayMedia — captures Teams/app system audio.
+ *   Video track is requested (spec requirement) then immediately discarded.
+ */
+async function getRawStream() {
+    if (audioMode === 'mic') {
+        return navigator.mediaDevices.getUserMedia({
+            audio: {
+                noiseSuppression: true,
+                echoCancellation: true,
+                autoGainControl:  true,
+                channelCount:     1,
+            },
+            video: false,
+        });
+    }
+
+    // Screen / Teams audio capture
+    const display = await navigator.mediaDevices.getDisplayMedia({
+        video: true,   // required by the spec — we discard the video track
+        audio: {
+            echoCancellation:  false,
+            noiseSuppression:  false,
+            autoGainControl:   false,
+        },
+    });
+    // Drop video immediately — we only want audio
+    display.getVideoTracks().forEach(t => t.stop());
+
+    if (display.getAudioTracks().length === 0) {
+        display.getTracks().forEach(t => t.stop());
+        throw new Error('no_audio');
+    }
+    return display;
+}
+
+/**
+ * Builds a Web Audio noise-cleaning pipeline around the raw stream.
+ *   source → High-pass filter (removes rumble < 80 Hz)
+ *          → Dynamics compressor (normalises speech volume)
+ *          → MediaStreamDestination
+ * Returns { ctx, processedStream }.
+ */
+async function buildProcessedStream(rawStream) {
+    const ctx    = new AudioContext();
+    if (ctx.state === 'suspended') await ctx.resume();
+
+    const source = ctx.createMediaStreamSource(rawStream);
+
+    // Remove low-frequency rumble (fan hum, HVAC, etc.)
+    const highPass       = ctx.createBiquadFilter();
+    highPass.type        = 'highpass';
+    highPass.frequency.value = 80;
+    highPass.Q.value     = 0.7;
+
+    // Compress dynamic range — quiet speech becomes audible, loud spikes are tamed
+    const compressor           = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -24;   // dB — start compressing here
+    compressor.knee.value      = 10;    // dB — soft-knee smoothing
+    compressor.ratio.value     = 3;     // 3:1 compression
+    compressor.attack.value    = 0.003; // fast attack (3 ms)
+    compressor.release.value   = 0.15;  // release (150 ms)
+
+    const dest = ctx.createMediaStreamDestination();
+    source.connect(highPass);
+    highPass.connect(compressor);
+    compressor.connect(dest);
+
+    return { ctx, processedStream: dest.stream };
+}
+
+/* ================================================================
    Recording — MediaRecorder + Groq
    ================================================================ */
 async function startRecording() {
     if (isRecording) return;
     if (!apiKey) { showToast('⚠️ Please save your Groq API key first'); return; }
 
+    let rawStream;
     try {
-        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        rawStream = await getRawStream();
     } catch (err) {
-        showToast('🎤 Microphone access denied — please allow it in browser settings');
+        if (err.message === 'no_audio') {
+            showToast('💻 No audio track found — tick "Share system audio" in the dialog');
+        } else if (audioMode === 'screen') {
+            showToast('💻 Screen capture cancelled');
+        } else {
+            showToast('🎤 Microphone access denied — allow it in browser settings');
+        }
         return;
+    }
+
+    // Auto-stop if the user clicks "Stop sharing" in the browser toolbar
+    rawStream.getTracks().forEach(track => {
+        track.addEventListener('ended', () => { if (isRecording) stopRecording(); });
+    });
+
+    audioStream = rawStream;
+
+    // Optionally route through the Web Audio noise-cleaning pipeline
+    let recordingStream = rawStream;
+    if (noiseCleanOn) {
+        try {
+            const { ctx, processedStream } = await buildProcessedStream(rawStream);
+            audioCtx        = ctx;
+            recordingStream = processedStream;
+        } catch (e) {
+            console.warn('Web Audio pipeline failed, using raw stream:', e);
+        }
     }
 
     // Pick a supported MIME type (Chrome: webm/opus; fallback to default)
@@ -147,7 +270,7 @@ async function startRecording() {
         ? 'audio/webm;codecs=opus'
         : '';
 
-    mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : {});
+    mediaRecorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : {});
 
     mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) currentChunks.push(e.data);
@@ -168,7 +291,8 @@ async function startRecording() {
     isRecording = true;
     setUIRecording(true);
     startChunk();
-    showToast('🎤 Recording started — speaking every 15 s will be transcribed');
+    const srcLabel = audioMode === 'screen' ? '💻 Teams/Screen audio' : '🎤 Microphone';
+    showToast(`${srcLabel} — transcribing every 15 s`);
 }
 
 function startChunk() {
@@ -196,10 +320,16 @@ function stopRecording() {
         mediaRecorder.stop();   // will still transcribe the final partial chunk
     }
 
-    // Stop all mic tracks
+    // Stop all media tracks
     if (audioStream) {
         audioStream.getTracks().forEach(t => t.stop());
         audioStream = null;
+    }
+
+    // Close Web Audio context
+    if (audioCtx) {
+        audioCtx.close().catch(() => {});
+        audioCtx = null;
     }
 
     chunkProgressWrap.classList.add('hidden');
@@ -522,6 +652,10 @@ function showToast(msg, ms = 3000) {
 saveKeyBtn.addEventListener('click',  saveApiKey);
 changeKeyBtn.addEventListener('click', clearApiKey);
 apiKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveApiKey(); });
+
+srcMicBtn.addEventListener('click',   () => setAudioMode('mic'));
+srcTeamsBtn.addEventListener('click', () => setAudioMode('screen'));
+noiseCleanBtn.addEventListener('click', toggleNoiseClean);
 
 startBtn.addEventListener('click',    startRecording);
 stopBtn.addEventListener('click',     stopRecording);
