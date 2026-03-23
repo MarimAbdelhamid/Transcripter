@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcripter – German Lecture Transcriber</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+
+    <!-- ===== HEADER ===== -->
+    <header>
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">Transcripter</span>
+            </div>
+            <span class="subtitle">Live German Lecture Transcriber</span>
+        </div>
+        <div class="header-right">
+            <button id="themeToggle" class="icon-btn" title="Toggle Dark / Light Mode" aria-label="Toggle theme">
+                <span id="themeIcon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN ===== -->
+    <main>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div id="pulseRing" class="pulse-ring hidden"></div>
+                <span id="micIcon" class="mic-icon">🎤</span>
+                <span id="statusText" class="status-text">Ready to transcribe</span>
+            </div>
+            <div class="status-right">
+                <span class="lang-badge">🇩🇪 Deutsch (de-DE)</span>
+                <span id="sentenceCount" class="count-badge">0 sentences</span>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button id="startBtn" class="btn btn-start" title="Start recording">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                Start
+            </button>
+            <button id="stopBtn" class="btn btn-stop" disabled title="Stop recording">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                Stop
+            </button>
+            <button id="clearBtn" class="btn btn-clear" title="Clear transcript">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg>
+                Clear
+            </button>
+            <button id="copyBtn" class="btn btn-copy" title="Copy all text to clipboard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5,15H4a2,2,0,0,1-2-2V4A2,2,0,0,1,4,2H13a2,2,0,0,1,2,2V5"/></svg>
+                Copy
+            </button>
+        </div>
+
+        <!-- Transcript Panel -->
+        <div class="transcript-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Transcript</h2>
+                <div class="export-group">
+                    <button id="exportTxt" class="btn btn-export" title="Download as .txt">
+                        📄 TXT
+                    </button>
+                    <button id="exportPdf" class="btn btn-export" title="Download as .pdf">
+                        📑 PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sentences appear here -->
+            <div id="transcript" class="transcript" role="log" aria-live="polite" aria-label="Transcript output">
+                <p class="placeholder-msg">
+                    Click <strong>Start</strong> to begin recording your German lecture.<br>
+                    Speak clearly — transcription appears in real time.
+                </p>
+            </div>
+
+            <!-- Live interim text (what you're saying right now) -->
+            <div id="interimBox" class="interim-box hidden">
+                <span class="interim-label">Listening…</span>
+                <span id="interimText" class="interim-text"></span>
+            </div>
+        </div>
+
+        <!-- Keyword Legend -->
+        <div class="legend" title="These words are automatically highlighted in the transcript">
+            <span class="legend-label">Auto-highlight:</span>
+            <span class="kw-chip kw-definition">Definition</span>
+            <span class="kw-chip kw-wichtig">Wichtig</span>
+            <span class="kw-chip kw-beispiel">Beispiel</span>
+            <span class="kw-chip kw-theorem">Theorem / Satz</span>
+            <span class="kw-chip kw-merke">Merke / Fazit</span>
+            <span class="kw-chip kw-aufgabe">Aufgabe</span>
+        </div>
+
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>Works best in <strong>Google Chrome</strong> · Web Speech API · All data stays local in your browser</p>
+    </footer>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
