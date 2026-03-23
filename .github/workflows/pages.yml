@@ -6,32 +6,34 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        run: |
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" repo
+          cd repo
+          git checkout ${{ github.sha }}
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Deploy to gh-pages branch
+        run: |
+          cd repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Upload site (root directory, no Jekyll)
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "."
+          # Create an orphan branch with only the site files
+          git checkout --orphan gh-pages
+          git rm -rf . --quiet
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          # Copy back only the files needed for the site
+          git checkout ${{ github.sha }} -- index.html style.css script.js
+
+          # Prevent Jekyll processing
+          touch .nojekyll
+
+          git add index.html style.css script.js .nojekyll
+          git commit -m "Deploy site from ${{ github.sha }}"
+          git push -f origin gh-pages
