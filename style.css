@@ -203,32 +203,32 @@ main {
     flex-wrap: wrap;
 }
 
-.course-group {
-    display: flex;
+.course-select {
+    flex: 1;
+    min-width: 200px;
+    max-width: 420px;
+    padding: 0.5rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    flex-wrap: wrap;
-}
-
-.btn-course {
     background: var(--surface);
-    border: none;
-    border-right: 1px solid var(--border);
-    padding: 0.48rem 0.9rem;
+    color: var(--text);
     font-family: var(--font);
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: var(--text-muted);
+    outline: none;
     cursor: pointer;
-    transition: background var(--trans), color var(--trans);
-    user-select: none;
-    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--trans);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    padding-right: 2rem;
 }
-.btn-course:last-child { border-right: none; }
-.btn-course:hover:not(.active) { background: var(--bg); color: var(--text); }
-.btn-course.active { background: var(--accent); color: #fff; }
+.course-select:focus { border-color: var(--accent); }
+.course-select optgroup { font-weight: 700; color: var(--text); font-size: 0.85rem; }
+.course-select option { font-weight: 500; padding: 0.3rem 0; }
 
 .lecture-input {
     padding: 0.46rem 0.75rem;
@@ -686,7 +686,6 @@ footer {
     .status-bar  { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
     .btn         { padding: 0.5rem 0.8rem; font-size: 0.82rem; }
     .transcript  { min-height: 240px; max-height: 360px; }
-    .course-group { flex-wrap: wrap; }
-    .btn-course  { font-size: 0.74rem; padding: 0.42rem 0.65rem; }
+    .course-select { min-width: 0; max-width: 100%; }
     .library-panel { width: 100vw; }
 }

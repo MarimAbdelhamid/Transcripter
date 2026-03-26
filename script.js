@@ -18,32 +18,41 @@ const LS_KEY_API       = 'transcripter-groq-key';
 const LS_KEY_THEME     = 'transcripter-theme';
 const LS_KEY_LIBRARY   = 'transcripter-library';
 
-const COURSES = [
+const COURSE_GROUPS = [
     {
-        id:    'Compiler',
-        short: 'Compiler',
-        color: '#3b82f6',
-        vocab: 'Compiler, Lexer, Parser, Token, Grammatik, Syntaxanalyse, Semantik, Codegenerierung, Symboltabelle, Parserbaum, Interpreter.',
+        group: 'Informatik_Sommersemester2026',
+        label: 'Informatik · Sommersemester 2026',
+        courses: [
+            { id: 'Compiler',            short: 'Compiler',     color: '#3b82f6', vocab: 'Compiler, Lexer, Parser, Token, Grammatik, Syntaxanalyse, Semantik, Codegenerierung, Symboltabelle, Parserbaum, Interpreter.' },
+            { id: 'Algorithmen & DS (Inf)', short: 'AlgDS-Inf', color: '#10b981', vocab: 'Algorithmus, Sortieren, Laufzeit, Komplexität, O-Notation, Rekursion, Graph, Baum, Heap, Hashing, Dynamische Programmierung, Greedy.' },
+            { id: 'Rechnerarchitektur',   short: 'RechArch',    color: '#8b5cf6', vocab: 'Prozessor, Register, Cache, Pipeline, Speicher, Befehlssatz, ALU, CPU, RAM, Interrupt, Assembler, Mikroprozessor.' },
+            { id: 'Betriebssystem',       short: 'BetriebsOS',  color: '#f59e0b', vocab: 'Prozess, Thread, Scheduler, Semaphor, Deadlock, Speicherverwaltung, Kernel, Dateisystem, Paging, Mutex.' },
+            { id: 'Datenkommunikation',   short: 'DatenKomm',   color: '#ef4444', vocab: 'TCP, IP, Protokoll, Netzwerk, Socket, OSI-Modell, Routing, Ethernet, DNS, HTTP, Firewall.' },
+        ],
     },
     {
-        id:    'Algorithmen und Datenstruktur',
-        short: 'AlgDS',
-        color: '#10b981',
-        vocab: 'Algorithmus, Sortieren, Laufzeit, Komplexität, O-Notation, Rekursion, Graph, Baum, Heap, Hashing, Dynamische Programmierung, Greedy.',
+        group: 'Wirtschaftsinformatik_Sommersemester2026',
+        label: 'Wirtschaftsinformatik · Sommersemester 2026',
+        courses: [
+            { id: 'Finanzen & Investition',  short: 'FinInvest',  color: '#06b6d4', vocab: 'Investition, Rendite, Kapitalwert, Barwert, Zins, Finanzierung, Cashflow, Bilanz, Aktie, Anleihe, Portfolio.' },
+            { id: 'Statistik',               short: 'Statistik',  color: '#84cc16', vocab: 'Wahrscheinlichkeit, Verteilung, Mittelwert, Varianz, Regression, Hypothesentest, Stichprobe, Konfidenzintervall, Normalverteilung.' },
+            { id: 'Algorithmen & DS (WInf)',  short: 'AlgDS-WInf', color: '#10b981', vocab: 'Algorithmus, Sortieren, Laufzeit, Komplexität, O-Notation, Rekursion, Graph, Baum, Heap, Hashing, Dynamische Programmierung, Greedy.' },
+            { id: 'IT-Infrastruktur',         short: 'IT-Infra',   color: '#a855f7', vocab: 'Server, Cloud, Virtualisierung, Netzwerk, Datenbank, Sicherheit, Backup, Monitoring, Container, Kubernetes.' },
+            { id: 'Produktion & Logistik',    short: 'ProdLog',    color: '#f97316', vocab: 'Produktion, Logistik, Lieferkette, Lagerhaltung, Bestellmenge, Durchlaufzeit, Kapazitätsplanung, Fertigung, Just-in-Time.' },
+            { id: 'Operations Research',      short: 'OR',         color: '#ec4899', vocab: 'Optimierung, Lineare Programmierung, Simplex, Ganzzahlig, Graphentheorie, Warteschlange, Simulation, Spieltheorie, Entscheidungstheorie.' },
+        ],
     },
     {
-        id:    'Rechnerarchitektur',
-        short: 'Rechnerarch',
-        color: '#8b5cf6',
-        vocab: 'Prozessor, Register, Cache, Pipeline, Speicher, Befehlssatz, ALU, CPU, RAM, Interrupt, Assembler, Mikroprozessor.',
-    },
-    {
-        id:    'Betriebssystem und Datenkommunikation',
-        short: 'BetriebsOS',
-        color: '#f59e0b',
-        vocab: 'Prozess, Thread, Scheduler, Semaphor, Deadlock, Speicherverwaltung, TCP, IP, Protokoll, Netzwerk, Socket, Kernel.',
+        group: 'Mehdi',
+        label: 'Mehdi',
+        courses: [
+            { id: 'Mehdi', short: 'Mehdi', color: '#64748b', vocab: '' },
+        ],
     },
 ];
+
+/* Flat list for quick lookup */
+const COURSES = COURSE_GROUPS.flatMap(g => g.courses.map(c => ({ ...c, group: g.group, groupLabel: g.label })));
 
 const BASE_PROMPT = 'Vorlesung, Universität, Definition, Theorem, Satz, Beweis, Beispiel, Aufgabe, Lösung, Wichtig, Merke, Fazit.';
 
@@ -56,7 +65,7 @@ const saveKeyBtn        = document.getElementById('saveKeyBtn');
 const apiKeyBanner      = document.getElementById('apiKeyBanner');
 const changeKeyBtn      = document.getElementById('changeKeyBtn');
 
-const courseGroup       = document.getElementById('courseGroup');
+const courseSelect      = document.getElementById('courseSelect');
 const lectureInput      = document.getElementById('lectureInput');
 
 const startBtn          = document.getElementById('startBtn');
@@ -113,6 +122,7 @@ let audioMode       = 'mic';
 let noiseCleanOn    = true;
 let translateOn     = false;
 let selectedCourse  = COURSES[0].id;
+let selectedGroup   = COURSE_GROUPS[0].group;
 
 /* ================================================================
    Keyword Definitions
@@ -135,14 +145,13 @@ function getActiveCourse() {
 
 function setCourse(courseId) {
     selectedCourse = courseId;
-    document.querySelectorAll('.btn-course').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.course === courseId);
-    });
+    const course = getActiveCourse();
+    selectedGroup = course.group;
+    courseSelect.value = courseId;
 }
 
-courseGroup.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-course');
-    if (btn) setCourse(btn.dataset.course);
+courseSelect.addEventListener('change', () => {
+    setCourse(courseSelect.value);
 });
 
 /* ================================================================
@@ -614,6 +623,8 @@ function saveToLibrary() {
         course:      course.id,
         courseShort: course.short,
         courseColor: course.color,
+        courseGroup: course.group,
+        courseGroupLabel: course.groupLabel,
         lecture,
         date:        now.toLocaleDateString('de-DE'),
         savedAt:     now.toISOString(),
