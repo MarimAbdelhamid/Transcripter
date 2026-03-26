@@ -59,12 +59,26 @@
 
         <!-- Course & Lecture Row -->
         <div class="course-row">
-            <div id="courseGroup" class="course-group" role="group" aria-label="Select course">
-                <button class="btn-course active" data-course="Compiler">Compiler</button>
-                <button class="btn-course" data-course="Algorithmen und Datenstruktur">Algorithmen &amp; DS</button>
-                <button class="btn-course" data-course="Rechnerarchitektur">Rechnerarchitektur</button>
-                <button class="btn-course" data-course="Betriebssystem und Datenkommunikation">Betriebssystem</button>
-            </div>
+            <select id="courseSelect" class="course-select" title="Select course">
+                <optgroup label="Informatik · Sommersemester 2026">
+                    <option value="Compiler" selected>Compiler</option>
+                    <option value="Algorithmen & DS (Inf)">Algorithmen &amp; DS</option>
+                    <option value="Rechnerarchitektur">Rechnerarchitektur</option>
+                    <option value="Betriebssystem">Betriebssystem</option>
+                    <option value="Datenkommunikation">Datenkommunikation</option>
+                </optgroup>
+                <optgroup label="Wirtschaftsinformatik · Sommersemester 2026">
+                    <option value="Finanzen & Investition">Finanzen &amp; Investition</option>
+                    <option value="Statistik">Statistik</option>
+                    <option value="Algorithmen & DS (WInf)">Algorithmen &amp; DS</option>
+                    <option value="IT-Infrastruktur">IT-Infrastruktur</option>
+                    <option value="Produktion & Logistik">Produktion &amp; Logistik</option>
+                    <option value="Operations Research">Operations Research</option>
+                </optgroup>
+                <optgroup label="Mehdi">
+                    <option value="Mehdi">Mehdi</option>
+                </optgroup>
+            </select>
             <input
                 type="text"
                 id="lectureInput"
@@ -197,10 +211,24 @@
                 <div class="library-header-actions">
                     <select id="libraryFilter" class="library-filter-select" title="Filter by course">
                         <option value="">All Courses</option>
-                        <option value="Compiler">Compiler</option>
-                        <option value="Algorithmen und Datenstruktur">Algorithmen und Datenstruktur</option>
-                        <option value="Rechnerarchitektur">Rechnerarchitektur</option>
-                        <option value="Betriebssystem und Datenkommunikation">Betriebssystem und Datenkommunikation</option>
+                        <optgroup label="Informatik · SoSe 2026">
+                            <option value="Compiler">Compiler</option>
+                            <option value="Algorithmen & DS (Inf)">Algorithmen &amp; DS (Inf)</option>
+                            <option value="Rechnerarchitektur">Rechnerarchitektur</option>
+                            <option value="Betriebssystem">Betriebssystem</option>
+                            <option value="Datenkommunikation">Datenkommunikation</option>
+                        </optgroup>
+                        <optgroup label="Wirtschaftsinformatik · SoSe 2026">
+                            <option value="Finanzen & Investition">Finanzen &amp; Investition</option>
+                            <option value="Statistik">Statistik</option>
+                            <option value="Algorithmen & DS (WInf)">Algorithmen &amp; DS (WInf)</option>
+                            <option value="IT-Infrastruktur">IT-Infrastruktur</option>
+                            <option value="Produktion & Logistik">Produktion &amp; Logistik</option>
+                            <option value="Operations Research">Operations Research</option>
+                        </optgroup>
+                        <optgroup label="Mehdi">
+                            <option value="Mehdi">Mehdi</option>
+                        </optgroup>
                     </select>
                     <button id="libraryClose" class="icon-btn" title="Close library">✕</button>
                 </div>
