@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcripter – German Lecture Transcriber</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+
+    <!-- ===== HEADER ===== -->
+    <header>
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <span class="logo-text">Transcripter</span>
+            </div>
+            <span class="subtitle">Powered by Groq · Whisper Large v3</span>
+        </div>
+        <div class="header-right">
+            <button id="libraryBtn" class="icon-btn" title="Browse saved lectures">📖</button>
+            <button id="themeToggle" class="icon-btn" title="Toggle Dark / Light Mode">
+                <span id="themeIcon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN ===== -->
+    <main>
+
+        <!-- API Key Setup Card (shown when no key is saved) -->
+        <div id="apiKeyCard" class="api-key-card">
+            <div class="api-key-header">
+                <span class="api-key-icon">🔑</span>
+                <div>
+                    <h3>Groq API Key</h3>
+                    <p>Free key at <strong>console.groq.com</strong> — no credit card needed</p>
+                </div>
+            </div>
+            <div class="api-key-row">
+                <input
+                    type="password"
+                    id="apiKeyInput"
+                    class="api-key-input"
+                    placeholder="gsk_..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button id="saveKeyBtn" class="btn btn-save-key">Save</button>
+            </div>
+            <p class="api-key-note">🔒 Stored only in your browser's localStorage — never sent anywhere except Groq's API.</p>
+        </div>
+
+        <!-- API Key Active Banner (shown when key is saved) -->
+        <div id="apiKeyBanner" class="api-key-banner hidden">
+            <span>🔑 Groq API key active &nbsp;·&nbsp; Whisper Large v3 &nbsp;·&nbsp; de-DE</span>
+            <button id="changeKeyBtn" class="btn-link">Change key</button>
+        </div>
+
+        <!-- Course & Lecture Row -->
+        <div class="course-row">
+            <select id="courseSelect" class="course-select" title="Select course">
+                <optgroup label="Informatik · Sommersemester 2026">
+                    <option value="Compiler" selected>Compiler</option>
+                    <option value="Algorithmen & DS (Inf)">Algorithmen &amp; DS</option>
+                    <option value="Rechnerarchitektur">Rechnerarchitektur</option>
+                    <option value="Betriebssystem">Betriebssystem</option>
+                    <option value="Datenkommunikation">Datenkommunikation</option>
+                </optgroup>
+                <optgroup label="Wirtschaftsinformatik · Sommersemester 2026">
+                    <option value="Finanzen & Investition">Finanzen &amp; Investition</option>
+                    <option value="Statistik">Statistik</option>
+                    <option value="Algorithmen & DS (WInf)">Algorithmen &amp; DS</option>
+                    <option value="IT-Infrastruktur">IT-Infrastruktur</option>
+                    <option value="Produktion & Logistik">Produktion &amp; Logistik</option>
+                    <option value="Operations Research">Operations Research</option>
+                </optgroup>
+                <optgroup label="Mehdi">
+                    <option value="Mehdi">Mehdi</option>
+                </optgroup>
+            </select>
+            <input
+                type="text"
+                id="lectureInput"
+                class="lecture-input"
+                placeholder="VL 1"
+                maxlength="24"
+                title="Lecture number / name — used in filename when exporting"
+            >
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div id="pulseRing" class="pulse-ring hidden"></div>
+                <span id="micIcon" class="mic-icon">🎤</span>
+                <span id="statusText" class="status-text">Ready to transcribe</span>
+            </div>
+            <div class="status-right">
+                <span class="lang-badge">🇩🇪 Deutsch</span>
+                <span id="sentenceCount" class="count-badge">0 segments</span>
+            </div>
+        </div>
+
+        <!-- Chunk Progress Bar (shown while recording) -->
+        <div id="chunkProgressWrap" class="chunk-progress-wrap hidden">
+            <div class="chunk-progress-label">
+                <span id="chunkLabel">Recording chunk…</span>
+                <span id="chunkTimer" class="chunk-timer">0s / 15s</span>
+            </div>
+            <div class="chunk-progress-track">
+                <div id="chunkProgressBar" class="chunk-progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- Audio Source, Noise Clean & Translate -->
+        <div class="source-row">
+            <div class="source-group" role="group" aria-label="Audio source">
+                <button id="srcMicBtn"   class="btn btn-src active" title="Capture from microphone">🎤 Microphone</button>
+                <button id="srcTeamsBtn" class="btn btn-src"        title="Capture Teams / any app audio">💻 Teams / Screen</button>
+            </div>
+            <button id="noiseCleanBtn" class="btn btn-noise-clean active" title="Toggle Web Audio noise filtering">
+                ✨ Noise Clean
+            </button>
+            <button id="translateBtn" class="btn btn-translate" title="Translate each German segment to English (uses Groq LLaMA)">
+                🌍 Translate EN
+            </button>
+        </div>
+
+        <!-- Teams instruction tip (shown when screen mode is active) -->
+        <div id="teamsTip" class="teams-tip hidden">
+            <strong>How to capture Teams audio:</strong>
+            In the browser dialog, select your <em>Teams window</em> or <em>Entire Screen</em>.
+            On <strong>Windows</strong>: check "Share system audio" to include meeting audio.
+            On <strong>macOS</strong>: system audio capture requires a virtual device (e.g. BlackHole).
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button id="startBtn" class="btn btn-start" title="Start recording (Space)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                Start
+            </button>
+            <button id="stopBtn" class="btn btn-stop" disabled title="Stop recording (Space)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                Stop
+            </button>
+            <button id="clearBtn" class="btn btn-clear" title="Clear transcript (Ctrl+K)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg>
+                Clear
+            </button>
+            <button id="copyBtn" class="btn btn-copy" title="Copy all text">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5,15H4a2,2,0,0,1-2-2V4A2,2,0,0,1,4,2H13a2,2,0,0,1,2,2V5"/></svg>
+                Copy
+            </button>
+            <button id="saveLibBtn" class="btn btn-save-lib" title="Save this transcript to the library">
+                💾 Save
+            </button>
+        </div>
+
+        <!-- Transcript Panel -->
+        <div class="transcript-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Transcript</h2>
+                <div class="export-group">
+                    <button id="exportTxt" class="btn btn-export">📄 TXT</button>
+                    <button id="exportPdf" class="btn btn-export">📑 PDF</button>
+                </div>
+            </div>
+
+            <!-- Processing indicator -->
+            <div id="processingBar" class="processing-bar hidden">
+                <div class="processing-spinner"></div>
+                <span id="processingLabel">Transcribing with Whisper Large v3…</span>
+            </div>
+
+            <!-- Sentences rendered here -->
+            <div id="transcript" class="transcript" role="log" aria-live="polite">
+                <p class="placeholder-msg">
+                    Save your Groq API key, choose your <strong>course</strong> and lecture number,<br>
+                    then click <strong>Start</strong>. Audio is transcribed every 15 s.<br>
+                    Enable <strong>🌍 Translate EN</strong> to see an English translation below each line.
+                </p>
+            </div>
+        </div>
+
+        <!-- Keyword Legend -->
+        <div class="legend">
+            <span class="legend-label">Auto-highlight:</span>
+            <span class="kw-chip kw-definition">Definition</span>
+            <span class="kw-chip kw-wichtig">Wichtig</span>
+            <span class="kw-chip kw-beispiel">Beispiel</span>
+            <span class="kw-chip kw-theorem">Theorem / Satz</span>
+            <span class="kw-chip kw-merke">Merke / Fazit</span>
+            <span class="kw-chip kw-aufgabe">Aufgabe</span>
+        </div>
+
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer>
+        <p>Works best in <strong>Google Chrome</strong> · Groq Whisper Large v3 + LLaMA · All data stays local</p>
+    </footer>
+
+    <!-- ===== LIBRARY MODAL ===== -->
+    <div id="libraryModal" class="library-modal hidden">
+        <div class="library-overlay" id="libraryOverlay"></div>
+        <div class="library-panel">
+            <div class="library-header">
+                <h3>📖 Lecture Library</h3>
+                <div class="library-header-actions">
+                    <select id="libraryFilter" class="library-filter-select" title="Filter by course">
+                        <option value="">All Courses</option>
+                        <optgroup label="Informatik · SoSe 2026">
+                            <option value="Compiler">Compiler</option>
+                            <option value="Algorithmen & DS (Inf)">Algorithmen &amp; DS (Inf)</option>
+                            <option value="Rechnerarchitektur">Rechnerarchitektur</option>
+                            <option value="Betriebssystem">Betriebssystem</option>
+                            <option value="Datenkommunikation">Datenkommunikation</option>
+                        </optgroup>
+                        <optgroup label="Wirtschaftsinformatik · SoSe 2026">
+                            <option value="Finanzen & Investition">Finanzen &amp; Investition</option>
+                            <option value="Statistik">Statistik</option>
+                            <option value="Algorithmen & DS (WInf)">Algorithmen &amp; DS (WInf)</option>
+                            <option value="IT-Infrastruktur">IT-Infrastruktur</option>
+                            <option value="Produktion & Logistik">Produktion &amp; Logistik</option>
+                            <option value="Operations Research">Operations Research</option>
+                        </optgroup>
+                        <optgroup label="Mehdi">
+                            <option value="Mehdi">Mehdi</option>
+                        </optgroup>
+                    </select>
+                    <button id="libraryClose" class="icon-btn" title="Close library">✕</button>
+                </div>
+            </div>
+            <div id="libraryList" class="library-list">
+                <p class="library-empty">No saved lectures yet.<br>Record a lecture and click <strong>💾 Save</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
